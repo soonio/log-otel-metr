@@ -1,0 +1,27 @@
+Name: chinese.rpc
+ListenOn: 0.0.0.0:8812
+#Etcd:
+#  Hosts:
+#  - 127.0.0.1:2379
+#  Key: chinese.rpc
+
+Log:
+  ServiceName: chinese
+  Mode: file
+  Path: logs
+  TimeFormat: 2006-01-02 15:04:05.000
+
+DevServer:
+  Enabled: true
+  Host: "0.0.0.0"
+  Port: 9101
+#
+#Telemetry:
+#  Name: chinese
+#  Endpoint: http://192.168.10.22:14268/api/traces
+#  Batcher: jaeger
+
+Telemetry:
+  Name: chinese
+  Endpoint: 192.168.10.22:4817
+  Batcher: otlpgrpc

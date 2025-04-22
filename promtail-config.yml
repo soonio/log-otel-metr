@@ -1,0 +1,35 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: chinese
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          server: logs-test
+          job: 中文
+          __path__: /var/logs/chinese/*log
+  - job_name: english
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          server: logs-test
+          job: 英文
+          __path__: /var/logs/english/*log
+  - job_name: greeting
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          server: logs-test
+          job: 你好
+          __path__: /var/logs/greet/*log

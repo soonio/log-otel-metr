@@ -1,0 +1,92 @@
+networks:
+  logs:
+    driver: bridge
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"  # 默认Web端口
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml  # 挂载配置文件
+      - ./prom/data:/prometheus  # 持久化存储指标数据
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    restart: unless-stopped
+    networks:
+      - logs
+
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki-config.yaml:/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - logs
+
+  promtail:
+    image: grafana/promtail:latest
+    container_name: promtail
+    volumes:
+      - ./project/chinese/logs:/var/logs/chinese
+      - ./project/english/logs:/var/logs/english
+      - ./project/greet/logs:/var/logs/greet
+      - ./promtail-config.yml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - logs
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/data:/var/lib/grafana  # 持久化数据（仪表盘、用户等）
+      - ./grafana/conf:/etc/grafana      # 自定义配置
+      - ./grafana/plugins:/var/lib/grafana/plugins  # 插件目录
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=332146  # 设置管理员密码
+    restart: unless-stopped
+    networks:
+      - logs
+    depends_on:
+      - prometheus
+
+  # Jaeger UI（可视化追踪数据）
+  jaeger:
+    image: jaegertracing/jaeger
+    container_name: jaeger
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true  # 启用 OTLP 接收器
+    ports:
+      - "16686:16686" # Jaeger UI
+      - "14250:14250" # gRPC server for Jaeger Protobuf
+      - "14268:14268" # HTTP server for Jaeger Thrift
+      - "4317:4317" # GRPC server
+      - "4318:4318" # HTTP server
+    networks:
+      - logs
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib
+    container_name: oc
+    volumes:
+      - ./otel-config.yaml:/etc/otelcol-contrib/config.yaml
+    ports:
+      - 1888:1888 # pprof扩展
+      - 8888:8888 # Collector公开的Prometheus指标
+      - 8889:8889 # Prometheus导出器指标
+      - 13133:13133 # health_check扩展
+      - 4817:4817 # OTLP gRPC接收器
+      - 4818:4818 # OTLP http接收器
+      - 55679:55679 # zpages扩展
+    networks:
+      - logs
+    depends_on:
+      - jaeger

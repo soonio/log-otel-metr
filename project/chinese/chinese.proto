@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package chinese;
+option go_package="./chinese";
+
+message Request {
+  string ping = 1;
+}
+
+message Response {
+  string pong = 1;
+}
+
+service Chinese {
+  rpc Ping(Request) returns(Response);
+}

@@ -1,0 +1,20 @@
+global:
+  scrape_interval: 15s  # 抓取间隔
+  evaluation_interval: 15s  # 告警规则评估间隔
+
+scrape_configs:
+  - job_name: 'prometheus'  # 监控自身
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'greeting'
+    static_configs:
+      - targets: ['192.168.10.22:9100']
+
+  - job_name: 'chinese'
+    static_configs:
+      - targets: [ '192.168.10.22:9101' ]
+
+  - job_name: 'english'
+    static_configs:
+      - targets: [ '192.168.10.22:9102' ]

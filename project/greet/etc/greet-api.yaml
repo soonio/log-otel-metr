@@ -1,0 +1,33 @@
+Name: greeting-api
+Host: 0.0.0.0
+Port: 8810
+
+Log:
+  ServiceName: api
+  Mode: file
+  Path: logs
+  TimeFormat: 2006-01-02 15:04:05.000
+
+DevServer:
+  Enabled: true
+  Host: "0.0.0.0"
+  Port: 9100
+#
+#DevServer:
+#  Enable: true
+
+English:
+  Target: "127.0.0.1:8811"
+
+Chinese:
+  Target: "127.0.0.1:8812"
+
+#Telemetry:
+#  Name: api
+#  Endpoint: http://192.168.10.22:14268/api/traces
+#  Batcher: jaeger
+
+Telemetry:
+  Name: api
+  Endpoint: 192.168.10.22:4817
+  Batcher: otlpgrpc
