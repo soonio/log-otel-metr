@@ -3,6 +3,10 @@
 
 package types
 
+type RateLimiterRsp struct {
+	Datetime string `json:"datetime"`
+}
+
 type Request struct {
 	Name string `path:"name"`
 }

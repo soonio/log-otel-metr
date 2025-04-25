@@ -21,4 +21,17 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			},
 		},
 	)
+
+	server.AddRoutes(
+		rest.WithMiddlewares(
+			[]rest.Middleware{serverCtx.RateLimiter},
+			[]rest.Route{
+				{
+					Method:  http.MethodGet,
+					Path:    "/rate/limiter",
+					Handler: RateLimiterHandler(serverCtx),
+				},
+			}...,
+		),
+	)
 }
