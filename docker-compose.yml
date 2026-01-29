@@ -10,7 +10,7 @@ services:
       - "9090:9090"  # 默认Web端口
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml  # 挂载配置文件
-      - ./prom/data:/prometheus  # 持久化存储指标数据
+      - ./data/prometheus:/prometheus  # 持久化存储指标数据
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -47,9 +47,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./grafana/data:/var/lib/grafana  # 持久化数据（仪表盘、用户等）
-      - ./grafana/conf:/etc/grafana      # 自定义配置
-      - ./grafana/plugins:/var/lib/grafana/plugins  # 插件目录
+      - ./data/grafana:/var/lib/grafana  # 持久化数据（仪表盘、用户等）
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=332146  # 设置管理员密码
     restart: unless-stopped
@@ -90,3 +88,45 @@ services:
       - logs
     depends_on:
       - jaeger
+
+  chinese:
+    image: golang:latest
+    container_name: chinese
+    ports:
+      - "8812:8812"
+    volumes:
+      - ./project:/project
+    working_dir: /project/chinese
+    command: ["/bin/sh", "-c", "cd /project && go mod tidy && cd /project/chinese && go run chinese.go -f etc/chinese.yaml"]
+    networks:
+      - logs
+    depends_on:
+      - otel-collector
+
+  english:
+    image: golang:latest
+    container_name: english
+    ports:
+      - "8811:8811"
+    volumes:
+      - ./project:/project
+    working_dir: /project/english
+    command: ["/bin/sh", "-c", "cd /project && go mod tidy && cd /project/english && go run english.go -f etc/english.yaml"]
+    networks:
+      - logs
+    depends_on:
+      - otel-collector
+
+  greet:
+    image: golang:latest
+    container_name: greet
+    ports:
+      - "8810:8810"
+    volumes:
+      - ./project:/project
+    working_dir: /project/greet
+    command: ["/bin/sh", "-c", "cd /project && go mod tidy && cd /project/greet && go run greet.go -f etc/greet-api.yaml"]
+    networks:
+      - logs
+    depends_on:
+      - otel-collector

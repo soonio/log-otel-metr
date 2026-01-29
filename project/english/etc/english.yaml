@@ -14,7 +14,7 @@ Log:
 DevServer:
   Enabled: true
   Host: "0.0.0.0"
-  Port: 9102
+  Port: 9100
 
 #Telemetry:
 #  Name: english
@@ -23,5 +23,5 @@ DevServer:
 
 Telemetry:
   Name: english
-  Endpoint: 192.168.10.22:4817
+  Endpoint: oc:4817
   Batcher: otlpgrpc

@@ -17,10 +17,10 @@ DevServer:
 #  Enable: true
 
 English:
-  Target: "127.0.0.1:8811"
+  Target: "english:8811"
 
 Chinese:
-  Target: "127.0.0.1:8812"
+  Target: "chinese:8812"
 
 #Telemetry:
 #  Name: api
@@ -29,5 +29,5 @@ Chinese:
 
 Telemetry:
   Name: api
-  Endpoint: 192.168.10.22:4817
+  Endpoint: oc:4817
   Batcher: otlpgrpc
