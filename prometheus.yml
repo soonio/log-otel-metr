@@ -1,20 +1,31 @@
 global:
   scrape_interval: 15s  # 抓取间隔
   evaluation_interval: 15s  # 告警规则评估间隔
+  external_labels:
+    cluster: 'production'
+    replica: '1'
 
 scrape_configs:
   - job_name: 'prometheus'  # 监控自身
     static_configs:
       - targets: ['localhost:9090']
 
+  # Go 应用的指标端点
   - job_name: 'greeting'
     static_configs:
       - targets: ['greet:9100']
+    metrics_path: '/metrics'
 
   - job_name: 'chinese'
     static_configs:
-      - targets: [ 'chinese:9100' ]
+      - targets: ['chinese:9100']
+    metrics_path: '/metrics'
 
   - job_name: 'english'
     static_configs:
-      - targets: [ 'english:9100' ]
+      - targets: ['english:9100']
+    metrics_path: '/metrics'
+
+# 加载告警规则
+rule_files:
+  - '/etc/prometheus/alerts.yml'

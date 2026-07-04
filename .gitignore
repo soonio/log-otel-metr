@@ -1,3 +1,25 @@
 data
 
-project/*/logs
+project/# 敏感配置文件
+.env
+
+# 数据目录
+data/
+
+# 日志文件
+*.log
+project/*/logs/*.log
+
+# IDE 配置
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# 临时文件
+*.tmp
+*.temp/logs

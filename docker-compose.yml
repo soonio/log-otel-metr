@@ -2,7 +2,7 @@ networks:
   logs:
     driver: bridge
 
-services:
+services:  
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
@@ -11,10 +11,18 @@ services:
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml  # 挂载配置文件
       - ./data/prometheus:/prometheus  # 持久化存储指标数据
+      - ./prometheus-alerts.yml:/etc/prometheus/alerts.yml  # 告警规则
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'  # 保留30天数据
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     networks:
       - logs
 
@@ -25,7 +33,9 @@ services:
       - "3100:3100"
     volumes:
       - ./loki-config.yaml:/etc/loki/local-config.yaml
+      - ./data/loki:/loki  # 持久化日志数据
     command: -config.file=/etc/loki/local-config.yaml
+    restart: unless-stopped
     networks:
       - logs
 
@@ -33,9 +43,7 @@ services:
     image: grafana/promtail:latest
     container_name: promtail
     volumes:
-      - ./project/chinese/logs:/var/logs/chinese
-      - ./project/english/logs:/var/logs/english
-      - ./project/greet/logs:/var/logs/greet
+      - ./data/logs:/var/logs
       - ./promtail-config.yml:/etc/promtail/config.yml
     command: -config.file=/etc/promtail/config.yml
     networks:
@@ -48,13 +56,19 @@ services:
       - "3000:3000"
     volumes:
       - ./data/grafana:/var/lib/grafana  # 持久化数据（仪表盘、用户等）
+      - ./grafana-provisioning:/etc/grafana/provisioning  # 数据源和仪表盘配置
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=332146  # 设置管理员密码
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USERNAME:-admin}  # 使用环境变量
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-332146}  # 使用环境变量
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel  # 安装常用插件
+      - GF_LOG_MODE=console
+      - GF_LOG_LEVEL=info
     restart: unless-stopped
     networks:
       - logs
     depends_on:
       - prometheus
+      - loki
 
   # Jaeger UI（可视化追踪数据）
   jaeger:
@@ -68,6 +82,7 @@ services:
       - "14268:14268" # HTTP server for Jaeger Thrift
       - "4317:4317" # GRPC server
       - "4318:4318" # HTTP server
+    restart: unless-stopped
     networks:
       - logs
 
@@ -84,49 +99,88 @@ services:
       - 4817:4817 # OTLP gRPC接收器
       - 4818:4818 # OTLP http接收器
       - 55679:55679 # zpages扩展
+    restart: unless-stopped
     networks:
       - logs
     depends_on:
       - jaeger
 
   chinese:
-    image: golang:latest
+    build:
+      context: ./project
+      dockerfile: Dockerfile
+    image: logs-stacks/app:latest
     container_name: chinese
     ports:
       - "8812:8812"
     volumes:
-      - ./project:/project
-    working_dir: /project/chinese
-    command: ["/bin/sh", "-c", "cd /project && go mod tidy && cd /project/chinese && go run chinese.go -f etc/chinese.yaml"]
+      - ./data/logs/chinese:/app/chinese/logs
+    working_dir: /app/chinese
+    command: ["/bin/sh", "-c", "./chinese -f etc/chinese.yaml"]
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
     networks:
       - logs
     depends_on:
       - otel-collector
 
   english:
-    image: golang:latest
+    build:
+      context: ./project
+      dockerfile: Dockerfile
+    image: logs-stacks/app:latest
     container_name: english
     ports:
       - "8811:8811"
     volumes:
-      - ./project:/project
-    working_dir: /project/english
-    command: ["/bin/sh", "-c", "cd /project && go mod tidy && cd /project/english && go run english.go -f etc/english.yaml"]
+      - ./data/logs/english:/app/english/logs
+    working_dir: /app/english
+    command: ["/bin/sh", "-c", "./english -f etc/english.yaml"]
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
     networks:
       - logs
     depends_on:
       - otel-collector
 
   greet:
-    image: golang:latest
+    build:
+      context: ./project
+      dockerfile: Dockerfile
+    image: logs-stacks/app:latest
     container_name: greet
     ports:
       - "8810:8810"
     volumes:
-      - ./project:/project
-    working_dir: /project/greet
-    command: ["/bin/sh", "-c", "cd /project && go mod tidy && cd /project/greet && go run greet.go -f etc/greet-api.yaml"]
+      - ./data/logs/greet:/app/greet/logs
+    working_dir: /app/greet
+    command: ["/bin/sh", "-c", "./greet -f etc/greet-api.yaml"]
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
     networks:
       - logs
     depends_on:
       - otel-collector
+      - chinese
+      - english

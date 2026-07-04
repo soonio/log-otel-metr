@@ -10,16 +10,13 @@ Log:
   Mode: file
   Path: logs
   TimeFormat: 2006-01-02 15:04:05.000
+  KeepDays: 7  # 日志保留7天
+  Compress: true  # 压缩旧日志
 
 DevServer:
   Enabled: true
   Host: "0.0.0.0"
   Port: 9100
-#
-#Telemetry:
-#  Name: chinese
-#  Endpoint: http://192.168.10.22:14268/api/traces
-#  Batcher: jaeger
 
 Telemetry:
   Name: chinese
